@@ -1,7 +1,5 @@
-import geoplot as gplt
 import geopandas as gpd
 import geoplot.crs as gcrs
-import imageio
 import pandas as pd
 import pathlib
 import matplotlib.animation as animation
