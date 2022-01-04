@@ -1,7 +1,9 @@
 # Pandas for data management
 import pandas as pd
 import imageio
-import pandas as pd
+import geoplot as gplt
+import geopandas as gpd
+import geoplot.crs as gcrs
 import pathlib
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
@@ -27,7 +29,7 @@ Death = pd.read_csv(join(dirname(__file__), 'data', 'Deaths.csv'))
 Cases = pd.read_csv(join(dirname(__file__), 'data',
                          'countries-aggregated.csv'))
 # Read Shapefile into dataframes
-World = pd.read_csv(join(dirname(__file__), 'data', 'World_Countries.shp'))
+World = gpd.read_file(join(dirname(__file__), 'data', 'World_Countries.shp'))
 
 # Create each of the tabs
 tab1 = plotting(Confirmed, Recovered, Death)  # For Plotting

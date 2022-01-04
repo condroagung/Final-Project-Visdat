@@ -67,7 +67,7 @@ def mapping(World, Cases):
 
         sd = selectedDay
         # Pull selected year
-        df_dt = World[World['Day'] == sd]
+        df_dt = Cases[Cases['Day'] == sd]
 
         # Merge the GeoDataframe object (sf) with the covid19 data
         merge = World.merge(df_dt, how='left', left_on=[
@@ -87,7 +87,7 @@ def mapping(World, Cases):
     def columndata(selectedDay):
         cd = selectedDay
         # Pull selected day
-        column = World[World['Day'] == cd]
+        column = Cases[Cases['Day'] == cd]
         column = column.sort_values(by='Confirmed', ascending=False)
         rank = []
         for i in range(column.index.shape[0]):
@@ -116,11 +116,11 @@ def mapping(World, Cases):
     def animate():
 
         global callback_id
-        if button.label == '► Play':
-            button.label = '❚❚ Pause'
+        if button.label == 'Play':
+            button.label = 'Pause'
             callback_id = curdoc().add_periodic_callback(animate_update, 20)
         else:
-            button.label = '► Play'
+            button.label = 'Play'
             curdoc().remove_periodic_callback(callback_id)
 
     # Geosource information for mapping
@@ -180,7 +180,7 @@ def mapping(World, Cases):
     slider.on_change('value', update_plot)
     # membuat tombol animasi
     callback_id = None
-    button = Button(label='► Play', width=60)
+    button = Button(label='Play', width=60)
     button.on_click(animate)
     # teks Div
     div = Div(text="""Visualisasi Data berikut menunjukkan persebaran kasus covid 19 di seluruh dunia mulai dari tanggal <b>22 Januari 2020</b> hingga <b>31 Desember 2021</b>. Slider menunjukkan pemetaan dari hari ke
@@ -201,11 +201,11 @@ def mapping(World, Cases):
     r.add_layout(color_bar)
     r.add_layout(labels)
     r.add_layout(judul)
-    layout = layout([
+    Layout = layout([
         [r],
         [slider, button, div],
     ])
     # Make a tab with the layout
-    tab = Panel(child=row(layout, tabel), title='Pemetaan Kasus Covid-19')
+    tab = Panel(child=row(Layout, tabel), title='Pemetaan Kasus Covid-19')
 
     return tab
