@@ -1,7 +1,6 @@
 # Pandas for data management
 import pandas as pd
 import geopandas as gpd
-import geoplot.crs as gcrs
 import pathlib
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
