@@ -1,7 +1,5 @@
 # Pandas for data management
 import pandas as pd
-import imageio
-import geoplot as gplt
 import geopandas as gpd
 import geoplot.crs as gcrs
 import pathlib
