@@ -13,10 +13,12 @@ import matplotlib.pyplot as plt
 
 
 def plotting(Confirmed, Recovered, Death):
-
+    
+    #Default Value
     case = "Confirmed"
     region = 'Indonesia'
-
+    
+    #function create columndatasearch
     def create_data(region, case, date_range=None):
 
         if case == 'Confirmed':
@@ -44,7 +46,8 @@ def plotting(Confirmed, Recovered, Death):
                 df['date'] <= np.datetime64(date_range[1]))
             df = df.loc[mask]
         return ColumnDataSource(df)
-
+    
+    #function make_plot
     def make_plot(source, title, case='Confirmed'):
         plt = figure(x_axis_type='datetime', name='plt')
         plt.title.text = title
@@ -62,23 +65,27 @@ def plotting(Confirmed, Recovered, Death):
         plt.axis.axis_label_text_font_style = "bold"
         plt.grid.grid_line_alpha = 0.3
         return plt
-
+    
+    #function update
     def update(date_range=None, force=False):
         plt.title.text = case.capitalize() + " case in " + region
         newdata = create_data(region, case, date_range).data
         source.data.update(newdata)
-
+    
+    #function update with widget select
     def handle_region_change(attrname, old, new):
         region = select.value
         plt.title.text = case.capitalize() + " case in " + region
         newdata = create_data(region, case).data
         source.data.update(newdata)
-
+    
+    #function update with widget range
     def handle_range_change(attrname, old, new):
 
         slider_value = date_range_slider.value_as_datetime
         update(date_range=slider_value)
-
+        
+    #function update with widget button
     def handle_case_change(attrname, old, new):
         from bokeh.models.glyphs import Line
         cases = ["Confirmed", "Recovered", "Death", 'All']
@@ -127,19 +134,28 @@ def plotting(Confirmed, Recovered, Death):
     source = create_data(region, case)
     case_date = pd.to_datetime(source.data['date'])
     slider_value = case_date[0], case_date[-1]
-
+    
+    #make plot
     plt = make_plot(source, case.capitalize() + " case in " +
                     region, case)
+    #adding widget rangeslider
     date_range_slider = DateRangeSlider(value=(
         0, slider_value[1]), start=slider_value[0], end=slider_value[1], title="Date", name="date_range_slider")
+    
+    #adding interactive
     date_range_slider.on_change('value', handle_range_change)
-
+    
+    #adding widget select
     select = Select(title="Country", value="Indonesia",
                     options=Confirmed.columns.tolist()[1:], name="select")
+    #adding interactive
     select.on_change('value', handle_region_change)
-
+    
+    
+    #adding widget radio button group
     case_select = RadioButtonGroup(
         labels=["Confirmed", "Recovered", "Death", "All"], active=0, name="case_select")
+    #adding interactive
     case_select.on_change('active', handle_case_change)
 
     # Make a tab with the layout
