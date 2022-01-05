@@ -5,161 +5,169 @@ import numpy as np
 from bokeh.plotting import figure
 from bokeh.models import (HoverTool,
                           ColumnDataSource, Panel)
-from bokeh.models.widgets import (RadioButtonGroup, Select, DateRangeSlider)
+from bokeh.models.widgets import (
+    RadioButtonGroup, Select, DateRangeSlider, CheckboxGroup)
 from bokeh.layouts import column, row
 import matplotlib.pyplot as plt
 
 # Make plot with histogram and return tab
 
 
-def plotting(Confirmed, Recovered, Death):
-    
-    #Default Value
-    case = "Confirmed"
-    region = 'Indonesia'
-    
-    #function create columndatasearch
-    def create_data(region, case, date_range=None):
+def plotting(df_confirmed, df_recovered, df_death):
 
-        if case == 'Confirmed':
-            plot = Confirmed[region]
-        elif case == 'Death':
-            plot = Death[region]
-        elif case == 'Recovered':
-            plot = Recovered[region]
+    # function make columndatasource
+    def make_source(case_list, country, date_range=None):
 
-        if case == "All":
-            df = pd.DataFrame(data={
-                'date': pd.to_datetime(Confirmed['Date']),
-                'death': Death[region],
-                'recovered': Recovered[region],
-                'plot': Death[region]
-            })
-        else:
-            df = pd.DataFrame(data={
-                'date': pd.to_datetime(Confirmed['Date']),
-                'plot': plot
-            })
+        ys = []
+        color = []
+
+    # if date_range is not None:
+        # mask = (df_confirmed['date'] > np.datetime64(date_range[0])) & (
+        # df_confirmed['date'] <= np.datetime64(date_range[1]))
+
+        for i, case in enumerate(case_list):
+
+            if case == "Confirmed":
+                if date_range is not None:
+                    ys.append(df_confirmed.loc[(df_confirmed['Date'] > date_range[0]) & (
+                        df_confirmed['Date'] <= date_range[1])][country].tolist())
+                else:
+                    ys.append(df_confirmed[country].tolist())
+                color.append('dodgerblue')
+            elif case == "Recovered":
+                if date_range is not None:
+                    ys.append(df_recovered.loc[(df_recovered['Date'] > date_range[0]) & (
+                        df_recovered['Date'] <= date_range[1])][country].tolist())
+                else:
+                    ys.append(df_recovered[country].tolist())
+                color.append('green')
+            else:
+                if date_range is not None:
+                    ys.append(df_death.loc[(df_death['Date'] > date_range[0]) & (
+                        df_death['Date'] <= date_range[1])][country].tolist())
+                else:
+                    ys.append(df_death[country].tolist())
+                color.append('red')
 
         if date_range is not None:
-            mask = (df['date'] > np.datetime64(date_range[0])) & (
-                df['date'] <= np.datetime64(date_range[1]))
-            df = df.loc[mask]
-        return ColumnDataSource(df)
-    
-    #function make_plot
-    def make_plot(source, title, case='Confirmed'):
-        plt = figure(x_axis_type='datetime', name='plt')
-        plt.title.text = title
-        plt.line('date', 'plot', source=source, color="dodgerblue", line_width=1,
-                 name='case', legend_label=case)
-        plt.circle('date', 'plot', size=5, color="dodgerblue", source=source)
-
-        hover = HoverTool(tooltips=[('Date', '@date'), ('Total case', '@plot')],
-                          formatters={'date': 'datetime'})
-        plt.add_tools(hover)
-        plt.legend.location = "top_left"
-        # fixed attributes
-        plt.xaxis.axis_label = "Date"
-        plt.yaxis.axis_label = "Total cases"
-        plt.axis.axis_label_text_font_style = "bold"
-        plt.grid.grid_line_alpha = 0.3
-        return plt
-    
-    #function update
-    def update(date_range=None, force=False):
-        plt.title.text = case.capitalize() + " case in " + region
-        newdata = create_data(region, case, date_range).data
-        source.data.update(newdata)
-    
-    #function update with widget select
-    def handle_region_change(attrname, old, new):
-        region = select.value
-        plt.title.text = case.capitalize() + " case in " + region
-        newdata = create_data(region, case).data
-        source.data.update(newdata)
-    
-    #function update with widget range
-    def handle_range_change(attrname, old, new):
-
-        slider_value = date_range_slider.value_as_datetime
-        update(date_range=slider_value)
-        
-    #function update with widget button
-    def handle_case_change(attrname, old, new):
-        from bokeh.models.glyphs import Line
-        cases = ["Confirmed", "Recovered", "Death", 'All']
-        case = cases[new]
-        print(case)
-        newdata = create_data(region, case).data
-        source.data.update(newdata)
-
-        if case == 'Confirmed' or case == "All":
-            color = 'dodgerblue'
-        elif case == 'Death':
-            color = 'red'
-        elif case == 'Recovered':
-            color = "green"
-
-        if case != "All" or case == 'Global':
-
-            plt.legend.items = [
-                (case, [plt.renderers[0]])
-            ]
-            plt.renderers[0].glyph.line_color = color
-            plt.renderers[1].glyph.line_color = color
-            try:
-                plt.renderers[2].visible = False
-                plt.renderers[3].visible = False
-            except IndexError:
-                print(False)
+            Source = {'x': [df_confirmed.loc[(df_death['Date'] > date_range[0]) & (df_death['Date'] <= date_range[1])]['Date'].tolist()] * len(case_list),
+                      'y': ys,
+                      'label': case_list,
+                      'color': color}
         else:
-            try:
-                plt.renderers[0].glyph.line_color = 'dodgerblue'
-                plt.renderers[1].glyph.line_color = 'dodgerblue'
-                plt.renderers[2].visible = True
-                plt.renderers[3].visible = True
-                plt.legend.items = [
-                    ("Confirmed", [plt.renderers[0]]),
-                    ("Recovered", [plt.renderers[2]]),
-                    ("Death", [plt.renderers[3]])
-                ]
-            except IndexError:
-                plt.vbar('date', top='recovered', width=1, line_width=5, source=source, color='green',
-                         name='recovered', legend_label="Recovered")
-                plt.step(x='date', y='death', source=source, color='red', line_width=2,
-                         name='death', legend_label="Death")
+            Source = {'x': [df_confirmed['Date'].tolist()] * len(case_list),
+                      'y': ys,
+                      'label': case_list,
+                      'color': color}
+
+        source = ColumnDataSource(Source)
+
+        return source
+
+    # function make plot
+    def make_plot(source):
+
+        p = figure(x_axis_type='datetime')
+
+        p.title.text = "Cases in " + country
+        p.multi_line('x', 'y', color='color', legend='label',
+                     line_width=1,
+                     source=source)
+        #plt.line(x='Date',y = 'Afghanistan', color='green', source=source)
+        #plt.circle('Date', 'Albania', size=5, source=source)
+        # hover = HoverTool(tooltips=[('Date', '@Date{%F}'), ('Confirmed case', '@Albania')],
+        # formatters={'date': 'datetime'})
+        # plt.add_tools(hover)
+        hover = HoverTool(tooltips=[('Cases', '@label'),
+                                    ('Date', '$x{%Y-%m-%d %H:%M:%S}'),
+                                    ('Number of case', '$y')],
+                          formatters={'$x': 'datetime'},
+                          line_policy='next')
+
+        # Add the hover tool and styling
+        p.add_tools(hover)
+        # fixed attributes
+        p.xaxis.axis_label = "Date"
+        p.yaxis.axis_label = "Total cases"
+        p.axis.axis_label_text_font_style = "bold"
+        p.grid.grid_line_alpha = 0.3
+
+        return p
+
+    # function update columndatasource from checkbox value
+    def update(attr, old, new):
+        cases_to_plot = [cases_selection.labels[i] for i in
+                         cases_selection.active]
+
+        new_src = make_source(cases_to_plot, country)
+
+        source.data.update(new_src.data)
+
+    # function update columndatasource from select value
+    def update_country_case(attr, old, new):
+        cases_to_plot = [cases_selection.labels[i] for i in
+                         cases_selection.active]
+        country = select.value
+        p.title.text = "Cases in " + country
+
+        new_src = make_source(cases_to_plot, country)
+
+        source.data.update(new_src.data)
+
+    # function update columndatasource from range value
+    def update_range(attrname, old, new):
+        cases_to_plot = [cases_selection.labels[i] for i in
+                         cases_selection.active]
+        slider_value = date_range_slider.value_as_datetime
+        print(slider_value)
+        new_src = make_source(cases_to_plot, country, slider_value)
+
+        source.data.update(new_src.data)
 
     # Default value
-    source = create_data(region, case)
-    case_date = pd.to_datetime(source.data['date'])
+    country = 'Indonesia'
+    cases_info = ['Confirmed', 'Recovered', 'Death']
+    # Convert all date dataframe type to datatime
+    df_confirmed['Date'] = pd.to_datetime(df_confirmed['Date'])
+    df_recovered['Date'] = pd.to_datetime(df_recovered['Date'])
+    df_death['Date'] = pd.to_datetime(df_death['Date'])
+
+    # make widget checkbox
+    cases_selection = CheckboxGroup(labels=cases_info,
+                                    active=[0, 1])
+    # make interactive checkbox
+    cases_selection.on_change('active', update)
+
+    initial_cases = [cases_selection.labels[i] for
+                     i in cases_selection.active]
+    # make widget select
+    select = Select(title="Country", value="Indonesia",
+                    options=df_confirmed.columns.tolist()[1:], name="select")
+
+    # make interactive select
+    select.on_change('value', update_country_case)
+
+    # make source
+    source = make_source(initial_cases, country)
+
+    # make plot
+    p = make_plot(source)
+
+    # convert to datetime for range date
+    case_date = pd.to_datetime(source.data['x'][0])
+    # initiate start and end value date range slider
     slider_value = case_date[0], case_date[-1]
-    
-    #make plot
-    plt = make_plot(source, case.capitalize() + " case in " +
-                    region, case)
-    #adding widget rangeslider
+    #mask = (df_confirmed['date'] > np.datetime64(case_date[0])) & (df_confirmed['date'] <= np.datetime64(case_date[-1]))
+
+    # make widget date range slider
     date_range_slider = DateRangeSlider(value=(
         0, slider_value[1]), start=slider_value[0], end=slider_value[1], title="Date", name="date_range_slider")
-    
-    #adding interactive
-    date_range_slider.on_change('value', handle_range_change)
-    
-    #adding widget select
-    select = Select(title="Country", value="Indonesia",
-                    options=Confirmed.columns.tolist()[1:], name="select")
-    #adding interactive
-    select.on_change('value', handle_region_change)
-    
-    
-    #adding widget radio button group
-    case_select = RadioButtonGroup(
-        labels=["Confirmed", "Recovered", "Death", "All"], active=0, name="case_select")
-    #adding interactive
-    case_select.on_change('active', handle_case_change)
+
+    # make interactive date range slider
+    date_range_slider.on_change('value', update_range)
 
     # Make a tab with the layout
-    tab = Panel(child=row(column(select, case_select, date_range_slider), plt),
+    tab = Panel(child=row(column(cases_selection, select, date_range_slider), p),
                 title='Grafik Kasus Covid-19')
 
     return tab
